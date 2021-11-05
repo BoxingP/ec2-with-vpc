@@ -1,0 +1,4 @@
+aws-cdk.core==1.128.0
+aws-cdk.aws_ec2==1.128.0
+boto3==1.19.6
+botocore==1.22.8

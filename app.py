@@ -2,13 +2,12 @@
 import datetime
 import os
 
-import boto3
-import botocore
 import yaml
-
 from aws_cdk import core as cdk
-from ec2_with_vpc.vpc_stack import VPCStack
+
 from ec2_with_vpc.ec2_stack import EC2Stack
+from ec2_with_vpc.vpc_stack import VPCStack
+from utils.keypair import Keypair
 
 with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding='UTF-8') as file:
     config = yaml.load(file, Loader=yaml.SafeLoader)
@@ -18,27 +17,15 @@ aws_tags_list = []
 for k, v in config['aws_tags'].items():
     aws_tags_list.append({'Key': k, 'Value': v or ' '})
 
-date_now = datetime.datetime.now().strftime("%Y%m%d")
-keypair_name = '-'.join([project, environment, date_now, 'key'])
-try:
-    ec2 = boto3.client('ec2')
-    response = ec2.describe_key_pairs(KeyNames=[keypair_name])
-except botocore.exceptions.ClientError as error:
-    if error.response['Error']['Code'] == "InvalidKeyPair.NotFound":
-        print("Creating Key Pair...")
-        ec2_resource = boto3.resource('ec2')
-        keypair = ec2_resource.create_key_pair(KeyName=keypair_name, KeyType='rsa',
-                                               TagSpecifications=[{'ResourceType': 'key-pair', 'Tags': aws_tags_list}])
-        keypair_path = '/tmp/' + keypair_name + '.pem'
-        with open(keypair_path, 'w') as file:
-            file.write(keypair.key_material)
-        print("New Key Pair", keypair_name, "created successfully and is stored in the path:", keypair_path)
-
 app = cdk.App()
 vpc_stack = VPCStack(app, '-'.join([project, environment, 'vpc']),
                      env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
                                          region=os.getenv("CDK_DEFAULT_REGION")))
-ec2_stack = EC2Stack(app, '-'.join([project, environment, 'ec2']), vpc=vpc_stack.vpc, key_name=keypair_name,
+date_now = datetime.datetime.now().strftime("%Y%m%d")
+ec2_stack = EC2Stack(app, '-'.join([project, environment, 'ec2']),
+                     vpc=vpc_stack.vpc,
+                     key_name=Keypair.create_keypair(
+                         keypair_name='-'.join([project, environment, date_now, 'key']), aws_tags=aws_tags_list),
                      env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
                                          region=os.getenv("CDK_DEFAULT_REGION")))
 

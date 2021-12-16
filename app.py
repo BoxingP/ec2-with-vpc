@@ -10,12 +10,12 @@ from aws_cdk import core as cdk
 from ec2_with_vpc.vpc_stack import VPCStack
 from ec2_with_vpc.ec2_stack import EC2Stack
 
-with open('aws_tags.yaml', 'r', encoding='UTF-8') as file:
-    aws_tags = yaml.load(file, Loader=yaml.SafeLoader)
-project = aws_tags['project'].lower().replace(' ', '-')
-environment = aws_tags['environment']
+with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding='UTF-8') as file:
+    config = yaml.load(file, Loader=yaml.SafeLoader)
+project = config['project'].lower().replace(' ', '-')
+environment = config['environment']
 aws_tags_list = []
-for k, v in aws_tags.items():
+for k, v in config['aws_tags'].items():
     aws_tags_list.append({'Key': k, 'Value': v or ' '})
 
 date_now = datetime.datetime.now().strftime("%Y%m%d")
@@ -42,7 +42,7 @@ ec2_stack = EC2Stack(app, '-'.join([project, environment, 'ec2']), vpc=vpc_stack
                      env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
                                          region=os.getenv("CDK_DEFAULT_REGION")))
 
-for key, value in aws_tags.items():
+for key, value in config['aws_tags'].items():
     cdk.Tags.of(app).add(key, value or " ")
 cdk.Tags.of(vpc_stack).add("application", "VPC")
 cdk.Tags.of(ec2_stack).add("application", "EC2")

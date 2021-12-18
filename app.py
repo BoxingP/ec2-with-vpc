@@ -6,6 +6,7 @@ import yaml
 from aws_cdk import core as cdk
 
 from ec2_with_vpc.ec2_stack import EC2Stack
+from ec2_with_vpc.rds_stack import RDSStack
 from ec2_with_vpc.vpc_stack import VPCStack
 from utils.keypair import Keypair
 
@@ -28,9 +29,14 @@ ec2_stack = EC2Stack(app, '-'.join([project, environment, 'ec2']),
                          keypair_name='-'.join([project, environment, date_now, 'key']), aws_tags=aws_tags_list),
                      env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
                                          region=os.getenv("CDK_DEFAULT_REGION")))
+rds_stack = RDSStack(app, '-'.join([project, environment, 'rds']),
+                     vpc=vpc_stack.vpc,
+                     env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
+                                         region=os.getenv("CDK_DEFAULT_REGION")))
 
 for key, value in config['aws_tags'].items():
     cdk.Tags.of(app).add(key, value or " ")
 cdk.Tags.of(vpc_stack).add("application", "VPC")
 cdk.Tags.of(ec2_stack).add("application", "EC2")
+cdk.Tags.of(rds_stack).add("application", "RDS")
 app.synth()

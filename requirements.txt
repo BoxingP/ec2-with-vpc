@@ -1,6 +1,7 @@
 aws-cdk.core==1.128.0
 aws-cdk.aws_ec2==1.128.0
 aws-cdk.aws_iam==1.128.0
+aws-cdk.aws_rds==1.128.0
 boto3==1.19.6
 botocore==1.22.8
 pyyaml<5.5, >=3.10

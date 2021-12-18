@@ -35,6 +35,7 @@ class RDSStack(cdk.Stack):
                 ec2.InstanceSize.XLARGE2,
             ),
             license_model=rds.LicenseModel.LICENSE_INCLUDED,
+            timezone='China Standard Time',
             copy_tags_to_snapshot=True,
             instance_identifier='-'.join([construct_id, 'rds'.replace(' ', '-')]),
             max_allocated_storage=600,

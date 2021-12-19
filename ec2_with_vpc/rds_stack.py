@@ -113,3 +113,12 @@ class RDSStack(cdk.Stack):
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.ISOLATED)
         )
+
+        cdk.CfnOutput(
+            self, 'OutputRDSEndpointAddress',
+            export_name='RDSEndpointAddress', value=mssql_rds.db_instance_endpoint_address
+        )
+        cdk.CfnOutput(
+            self, 'OutputRDSEndpointPort',
+            export_name='RDSEndpointPort', value=mssql_rds.db_instance_endpoint_port
+        )

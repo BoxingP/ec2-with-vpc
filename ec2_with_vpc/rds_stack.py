@@ -73,7 +73,7 @@ class RDSStack(cdk.Stack):
         )
         option_group = rds.OptionGroup(
             self, 'OptionGroup',
-            engine=rds.DatabaseInstanceEngine.sql_server_se(
+            engine=rds.DatabaseInstanceEngine.sql_server_ee(
                 version=rds.SqlServerEngineVersion.VER_12_00_5571_0_V1
             ),
             configurations=[
@@ -90,13 +90,13 @@ class RDSStack(cdk.Stack):
                 username='admin',
                 password=cdk.SecretValue.secrets_manager(
                     secret_id='prod/ThermoFisherMall/MSSQL',
-                    json_field='mysql_password')),
-            allocated_storage=450,
-            engine=rds.DatabaseInstanceEngine.sql_server_se(
+                    json_field='mssql_password')),
+            allocated_storage=130,
+            engine=rds.DatabaseInstanceEngine.sql_server_ee(
                 version=rds.SqlServerEngineVersion.VER_12_00_5571_0_V1
             ),
             instance_type=ec2.InstanceType.of(
-                ec2.InstanceClass.MEMORY5,
+                ec2.InstanceClass.STANDARD5,
                 ec2.InstanceSize.XLARGE2,
             ),
             license_model=rds.LicenseModel.LICENSE_INCLUDED,
@@ -107,7 +107,7 @@ class RDSStack(cdk.Stack):
             multi_az=False,
             option_group=option_group,
             port=MSSQL_PORT,
-            removal_policy=cdk.RemovalPolicy.DESTROY,
+            removal_policy=cdk.RemovalPolicy.SNAPSHOT,
             security_groups=[rds_security_group],
             storage_type=rds.StorageType.GP2,
             vpc=vpc,

@@ -15,7 +15,7 @@ class EC2Stack(cdk.Stack):
         s3_bucket_name = cdk.Fn.import_value('DBBackupS3BucketName')
 
         app_windows_image = ec2.MachineImage.generic_windows(
-            ami_map={os.getenv('AWS_DEFAULT_REGION'): 'ami-0ace3d6977b9072ee'})
+            ami_map={os.getenv('AWS_DEFAULT_REGION'): 'ami-039d523dc6a4d52ab'})
         app_security_group = ec2.SecurityGroup(self, 'AppSecurityGroup', vpc=vpc,
                                                description='Security group for app servers.',
                                                security_group_name='-'.join([construct_id, 'app sg'.replace(' ', '-')])

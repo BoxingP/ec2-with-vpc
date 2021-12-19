@@ -12,6 +12,7 @@ class EC2Stack(cdk.Stack):
     def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, key_name: str,
                  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
+        s3_bucket_name = cdk.Fn.import_value('DBBackupS3BucketName')
 
         app_windows_image = ec2.MachineImage.generic_windows(
             ami_map={os.getenv('AWS_DEFAULT_REGION'): 'ami-0ace3d6977b9072ee'})
@@ -19,10 +20,43 @@ class EC2Stack(cdk.Stack):
                                                description='Security group for app servers.',
                                                security_group_name='-'.join([construct_id, 'app sg'.replace(' ', '-')])
                                                )
+        operating_s3_policy = iam.ManagedPolicy(
+            self, 'OperatingS3Policy',
+            managed_policy_name='-'.join(
+                [construct_id, 'operating s3 policy'.replace(' ', '-')]
+            ),
+            description='Policy to operate S3 bucket',
+            statements=[
+                iam.PolicyStatement(
+                    sid='AllowListOfSpecificBucket',
+                    actions=['s3:ListBucket'],
+                    resources=[
+                        'arn:aws-cn:s3:::' + s3_bucket_name,
+                        'arn:aws-cn:s3:::' + s3_bucket_name + '/*'
+                    ]
+                ),
+                iam.PolicyStatement(
+                    sid='AllowGetObjectOfSpecificBucket',
+                    actions=['s3:GetObject'],
+                    resources=[
+                        'arn:aws-cn:s3:::' + s3_bucket_name,
+                        'arn:aws-cn:s3:::' + s3_bucket_name + '/*'
+                    ]
+                ),
+                iam.PolicyStatement(
+                    sid='AllowPutObjectOfSpecificBucket',
+                    actions=['s3:PutObject'],
+                    resources=[
+                        'arn:aws-cn:s3:::' + s3_bucket_name,
+                        'arn:aws-cn:s3:::' + s3_bucket_name + '/*'
+                    ]
+                )
+            ]
+        )
         app_role = iam.Role(self, 'AppRole',
                             assumed_by=iam.ServicePrincipal('ec2.amazonaws.com.cn'),
                             description="IAM role for app servers",
-                            managed_policies=[],
+                            managed_policies=[operating_s3_policy],
                             role_name='-'.join([construct_id, 'app servers'.replace(' ', '-')]),
                             )
 
@@ -84,4 +118,5 @@ class EC2Stack(cdk.Stack):
 
         cdk.CfnOutput(self, 'OutputAppInstanceId', export_name='AppInstanceId', value=app_instance.instance_id)
         cdk.CfnOutput(self, 'OutputAppPublicIP', export_name='AppPublicIP', value=app_instance.instance_public_ip)
-        cdk.CfnOutput(self, 'OutputAppSecurityGroupId', export_name='AppSecurityGroupId', value=app_security_group.security_group_id)
+        cdk.CfnOutput(self, 'OutputAppSecurityGroupId', export_name='AppSecurityGroupId',
+                      value=app_security_group.security_group_id)

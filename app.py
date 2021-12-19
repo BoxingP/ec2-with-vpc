@@ -7,6 +7,7 @@ from aws_cdk import core as cdk
 
 from ec2_with_vpc.ec2_stack import EC2Stack
 from ec2_with_vpc.rds_stack import RDSStack
+from ec2_with_vpc.s3_bucket_stack import S3BucketStack
 from ec2_with_vpc.vpc_stack import VPCStack
 from utils.keypair import Keypair
 
@@ -33,6 +34,9 @@ rds_stack = RDSStack(app, '-'.join([project, environment, 'rds']),
                      vpc=vpc_stack.vpc,
                      env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
                                          region=os.getenv("CDK_DEFAULT_REGION")))
+s3_bucket_stack = S3BucketStack(app, '-'.join([project, environment, 's3']),
+                                env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
+                                                    region=os.getenv("CDK_DEFAULT_REGION")))
 
 for key, value in config['aws_tags'].items():
     cdk.Tags.of(app).add(key, value or " ")

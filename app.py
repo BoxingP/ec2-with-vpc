@@ -15,12 +15,13 @@ with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding=
     config = yaml.load(file, Loader=yaml.SafeLoader)
 project = config['project'].lower().replace(' ', '-')
 environment = config['environment']
+vpc_cidr = config['vpc_cidr']
 aws_tags_list = []
 for k, v in config['aws_tags'].items():
     aws_tags_list.append({'Key': k, 'Value': v or ' '})
 
 app = cdk.App()
-vpc_stack = VPCStack(app, '-'.join([project, environment, 'vpc']),
+vpc_stack = VPCStack(app, '-'.join([project, environment, 'vpc']), cidr=vpc_cidr,
                      env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
                                          region=os.getenv("CDK_DEFAULT_REGION")))
 date_now = datetime.datetime.now().strftime("%Y%m%d")

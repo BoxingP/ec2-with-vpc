@@ -16,4 +16,4 @@ class VPCStack(cdk.Stack):
                            subnet_configuration=[public_subnet, private_subnet, isolated_subnet]
                            )
 
-        cdk.CfnOutput(self, 'OutputVPC', export_name='VPC', value=self.vpc.vpc_id)
+        cdk.CfnOutput(self, 'OutputVPC', export_name=construct_id.title().replace('-', ''), value=self.vpc.vpc_id)

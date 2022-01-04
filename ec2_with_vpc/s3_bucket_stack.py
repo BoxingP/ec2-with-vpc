@@ -9,7 +9,7 @@ class S3BucketStack(cdk.Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         s3_bucket = s3.Bucket(
-            self, 'DBBackup', bucket_name='-'.join([construct_id, 's3']),
+            self, 'S3Bucket', bucket_name='-'.join([construct_id, 's3']),
             versioned=True,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             auto_delete_objects=False,
@@ -38,5 +38,6 @@ class S3BucketStack(cdk.Stack):
         )
 
         cdk.CfnOutput(
-            self, 'OutputDBBackupS3BucketName', export_name='DBBackupS3BucketName', value=s3_bucket.bucket_name
+            self, 'OutputS3BucketName',
+            export_name=construct_id.title().replace('-', '') + 'BucketName', value=s3_bucket.bucket_name
         )

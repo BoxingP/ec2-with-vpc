@@ -34,13 +34,18 @@ class RDSStack(cdk.Stack):
             )
         rds_security_group.add_ingress_rule(
             peer=ec2.SecurityGroup.from_security_group_id(
-                self, "AppSG", security_group_id=cdk.Fn.import_value('AppSecurityGroupId')
+                self, "AppSG",
+                security_group_id=cdk.Fn.import_value(
+                    construct_id.rsplit('-', 1)[0].title().replace('-', '') + 'Ec2SecurityGroupId'
+                )
             ),
             connection=ec2.Port.tcp(MSSQL_PORT),
             description='from app servers'
         )
 
-        s3_bucket_name = cdk.Fn.import_value('DBBackupS3BucketName')
+        s3_bucket_name = cdk.Fn.import_value(
+            construct_id.rsplit('-', 1)[0].title().replace('-', '') + 'S3BucketName'
+        )
         backup_restore_from_s3_policy = iam.ManagedPolicy(
             self, 'BackupRestoreFromS3Policy',
             managed_policy_name='-'.join(
@@ -116,9 +121,11 @@ class RDSStack(cdk.Stack):
 
         cdk.CfnOutput(
             self, 'OutputRDSEndpointAddress',
-            export_name='RDSEndpointAddress', value=mssql_rds.db_instance_endpoint_address
+            export_name=construct_id.title().replace('-', '') + 'EndpointAddress',
+            value=mssql_rds.db_instance_endpoint_address
         )
         cdk.CfnOutput(
             self, 'OutputRDSEndpointPort',
-            export_name='RDSEndpointPort', value=mssql_rds.db_instance_endpoint_port
+            export_name=construct_id.title().replace('-', '') + 'EndpointPort',
+            value=mssql_rds.db_instance_endpoint_port
         )

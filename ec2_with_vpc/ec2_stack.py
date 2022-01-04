@@ -12,7 +12,9 @@ class EC2Stack(cdk.Stack):
     def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, key_name: str,
                  **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
-        s3_bucket_name = cdk.Fn.import_value('DBBackupS3BucketName')
+        s3_bucket_name = cdk.Fn.import_value(
+            construct_id.rsplit('-', 1)[0].title().replace('-', '') + 'S3BucketName'
+        )
 
         app_windows_image = ec2.MachineImage.generic_windows(
             ami_map={os.getenv('AWS_DEFAULT_REGION'): 'ami-039d523dc6a4d52ab'})
@@ -116,7 +118,14 @@ class EC2Stack(cdk.Stack):
                     description=inbound['description']
                 )
 
-        cdk.CfnOutput(self, 'OutputAppInstanceId', export_name='AppInstanceId', value=app_instance.instance_id)
-        cdk.CfnOutput(self, 'OutputAppPublicIP', export_name='AppPublicIP', value=app_instance.instance_public_ip)
-        cdk.CfnOutput(self, 'OutputAppSecurityGroupId', export_name='AppSecurityGroupId',
-                      value=app_security_group.security_group_id)
+        cdk.CfnOutput(
+            self, 'OutputAppInstanceId',
+            export_name=construct_id.title().replace('-', '') + 'InstanceId', value=app_instance.instance_id)
+        cdk.CfnOutput(
+            self, 'OutputAppPublicIP',
+            export_name=construct_id.title().replace('-', '') + 'InstancePublicIP',
+            value=app_instance.instance_public_ip)
+        cdk.CfnOutput(
+            self, 'OutputAppSecurityGroupId',
+            export_name=construct_id.title().replace('-', '') + 'SecurityGroupId',
+            value=app_security_group.security_group_id)

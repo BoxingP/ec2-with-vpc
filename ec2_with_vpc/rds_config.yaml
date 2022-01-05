@@ -1,0 +1,5 @@
+---
+rds_port: 1433
+inbounds:
+  - ip: '222.126.242.202/32'
+    description: 'from office'

@@ -8,8 +8,6 @@ from aws_cdk import (
     core as cdk
 )
 
-MSSQL_PORT = 1433
-
 
 class RDSStack(cdk.Stack):
     def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, **kwargs) -> None:
@@ -19,16 +17,17 @@ class RDSStack(cdk.Stack):
             self, 'RDSSecurityGroup', vpc=vpc, description='Security group for rds.',
             security_group_name='-'.join([construct_id, 'rds'.replace(' ', '-')])
         )
-        with open(os.path.join(os.path.dirname(__file__), 'rds_inbounds.yaml'), 'r', encoding='UTF-8') as file:
-            inbounds = yaml.load(file, Loader=yaml.SafeLoader)
-        for inbound in inbounds:
+        with open(os.path.join(os.path.dirname(__file__), 'rds_config.yaml'), 'r', encoding='UTF-8') as file:
+            rds_config = yaml.load(file, Loader=yaml.SafeLoader)
+            rds_port = rds_config['rds_port']
+        for inbound in rds_config['inbounds']:
             rds_security_group.add_ingress_rule(
                 peer=ec2.Peer.ipv4(inbound['ip']),
                 connection=ec2.Port(
                     protocol=ec2.Protocol.TCP,
                     string_representation=inbound['description'],
-                    from_port=MSSQL_PORT,
-                    to_port=MSSQL_PORT
+                    from_port=rds_port,
+                    to_port=rds_port
                 ),
                 description=inbound['description']
             )
@@ -39,7 +38,7 @@ class RDSStack(cdk.Stack):
                     construct_id.rsplit('-', 1)[0].title().replace('-', '') + 'Ec2SecurityGroupId'
                 )
             ),
-            connection=ec2.Port.tcp(MSSQL_PORT),
+            connection=ec2.Port.tcp(rds_port),
             description='from app servers'
         )
 
@@ -91,6 +90,7 @@ class RDSStack(cdk.Stack):
 
         mssql_rds = rds.DatabaseInstance(
             self, 'RDS',
+            character_set_name='Chinese_PRC_CI_AS',
             credentials=rds.Credentials.from_password(
                 username='admin',
                 password=cdk.SecretValue.secrets_manager(
@@ -106,12 +106,19 @@ class RDSStack(cdk.Stack):
             ),
             license_model=rds.LicenseModel.LICENSE_INCLUDED,
             timezone='China Standard Time',
+            auto_minor_version_upgrade=False,
+            backup_retention=cdk.Duration.days(7),
+            cloudwatch_logs_exports=['error'],
             copy_tags_to_snapshot=True,
+            delete_automated_backups=True,
+            deletion_protection=False,
             instance_identifier='-'.join([construct_id, 'rds'.replace(' ', '-')]),
             max_allocated_storage=600,
             multi_az=False,
             option_group=option_group,
-            port=MSSQL_PORT,
+            port=rds_port,
+            preferred_backup_window='19:00-19:30',
+            publicly_accessible=False,
             removal_policy=cdk.RemovalPolicy.SNAPSHOT,
             security_groups=[rds_security_group],
             storage_type=rds.StorageType.GP2,

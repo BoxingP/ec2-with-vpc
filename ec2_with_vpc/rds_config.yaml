@@ -1,5 +1,19 @@
 ---
+master_user:
+  name: 'admin'
+  password:
+    secret_id: 'prod/ThermoFisherMall/MSSQL'
+    json_field: 'mssql_password'
 rds_port: 1433
+type: 'm4.xlarge'
+storage: 130
+max_storage: 300
+collation: 'Chinese_PRC_CI_AS'
+timezone: 'China Standard Time'
+backup_retention_days: 7
+backup_window: '19:00-19:30'
+cloudwatch_logs_exports:
+  - 'error'
 inbounds:
   - ip: '222.126.242.202/32'
     description: 'from office'

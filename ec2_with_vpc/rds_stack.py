@@ -8,6 +8,10 @@ from aws_cdk import (
     core as cdk
 )
 
+from utils.rds_instance_type import RDSInstanceType
+
+SQL_SERVER_VERSION = rds.SqlServerEngineVersion.VER_12_00_5571_0_V1
+
 
 class RDSStack(cdk.Stack):
     def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, **kwargs) -> None:
@@ -19,7 +23,9 @@ class RDSStack(cdk.Stack):
         )
         with open(os.path.join(os.path.dirname(__file__), 'rds_config.yaml'), 'r', encoding='UTF-8') as file:
             rds_config = yaml.load(file, Loader=yaml.SafeLoader)
-            rds_port = rds_config['rds_port']
+        rds_port = rds_config['rds_port']
+        master_user = rds_config['master_user']
+
         for inbound in rds_config['inbounds']:
             rds_security_group.add_ingress_rule(
                 peer=ec2.Peer.ipv4(inbound['ip']),
@@ -77,9 +83,7 @@ class RDSStack(cdk.Stack):
         )
         option_group = rds.OptionGroup(
             self, 'OptionGroup',
-            engine=rds.DatabaseInstanceEngine.sql_server_ee(
-                version=rds.SqlServerEngineVersion.VER_12_00_5571_0_V1
-            ),
+            engine=rds.DatabaseInstanceEngine.sql_server_ee(version=SQL_SERVER_VERSION),
             configurations=[
                 rds.OptionConfiguration(
                     name='SQLSERVER_BACKUP_RESTORE',
@@ -90,34 +94,31 @@ class RDSStack(cdk.Stack):
 
         mssql_rds = rds.DatabaseInstance(
             self, 'RDS',
-            character_set_name='Chinese_PRC_CI_AS',
+            character_set_name=rds_config['collation'],
             credentials=rds.Credentials.from_password(
-                username='admin',
+                username=master_user['name'],
                 password=cdk.SecretValue.secrets_manager(
-                    secret_id='prod/ThermoFisherMall/MSSQL',
-                    json_field='mssql_password')),
-            allocated_storage=130,
-            engine=rds.DatabaseInstanceEngine.sql_server_ee(
-                version=rds.SqlServerEngineVersion.VER_12_00_5571_0_V1
+                    secret_id=master_user['password']['secret_id'],
+                    json_field=master_user['password']['json_field']
+                )
             ),
-            instance_type=ec2.InstanceType.of(
-                ec2.InstanceClass.STANDARD5,
-                ec2.InstanceSize.XLARGE2,
-            ),
+            allocated_storage=int(rds_config['storage']),
+            engine=rds.DatabaseInstanceEngine.sql_server_ee(version=SQL_SERVER_VERSION),
+            instance_type=RDSInstanceType().get_instance_type(rds_config['type']),
             license_model=rds.LicenseModel.LICENSE_INCLUDED,
-            timezone='China Standard Time',
+            timezone=rds_config['timezone'],
             auto_minor_version_upgrade=False,
-            backup_retention=cdk.Duration.days(7),
-            cloudwatch_logs_exports=['error'],
+            backup_retention=cdk.Duration.days(int(rds_config['backup_retention_days'])),
+            cloudwatch_logs_exports=rds_config['cloudwatch_logs_exports'],
             copy_tags_to_snapshot=True,
             delete_automated_backups=True,
             deletion_protection=False,
             instance_identifier='-'.join([construct_id, 'rds'.replace(' ', '-')]),
-            max_allocated_storage=600,
+            max_allocated_storage=int(rds_config['max_storage']) if rds_config['max_storage'] is not None else None,
             multi_az=False,
             option_group=option_group,
             port=rds_port,
-            preferred_backup_window='19:00-19:30',
+            preferred_backup_window=rds_config['backup_window'],
             publicly_accessible=False,
             removal_policy=cdk.RemovalPolicy.SNAPSHOT,
             security_groups=[rds_security_group],

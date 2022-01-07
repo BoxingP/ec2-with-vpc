@@ -15,9 +15,11 @@ class EC2Stack(cdk.Stack):
         s3_bucket_name = cdk.Fn.import_value(
             construct_id.rsplit('-', 1)[0].title().replace('-', '') + 'S3BucketName'
         )
+        with open(os.path.join(os.path.dirname(__file__), 'ec2_config.yaml'), 'r', encoding='UTF-8') as file:
+            ec2_config = yaml.load(file, Loader=yaml.SafeLoader)
 
         app_windows_image = ec2.MachineImage.generic_windows(
-            ami_map={os.getenv('AWS_DEFAULT_REGION'): 'ami-039d523dc6a4d52ab'})
+            ami_map={os.getenv('AWS_DEFAULT_REGION'): ec2_config['ami']})
         app_security_group = ec2.SecurityGroup(self, 'AppSecurityGroup', vpc=vpc,
                                                description='Security group for app servers.',
                                                security_group_name='-'.join([construct_id, 'app sg'.replace(' ', '-')])
@@ -61,31 +63,25 @@ class EC2Stack(cdk.Stack):
                             managed_policies=[operating_s3_policy],
                             role_name='-'.join([construct_id, 'app servers'.replace(' ', '-')]),
                             )
+        block_devices = []
+        for device in ec2_config['block_devices']:
+            block_devices.append(
+                ec2.BlockDevice(
+                    device_name=device['name'],
+                    volume=ec2.BlockDeviceVolume.ebs(
+                        volume_size=int(device['size']),
+                        encrypted=False,
+                        delete_on_termination=True,
+                        volume_type=ec2.EbsDeviceVolumeType.GP2
+                    )
+                )
+            )
 
         app_instance = ec2.Instance(self, 'AppEC2',
-                                    instance_type=ec2.InstanceType('t2.xlarge'),
+                                    instance_type=ec2.InstanceType(ec2_config['type']),
                                     machine_image=app_windows_image,
                                     vpc=vpc,
-                                    block_devices=[
-                                        ec2.BlockDevice(
-                                            device_name='/dev/sda1',
-                                            volume=ec2.BlockDeviceVolume.ebs(
-                                                volume_size=30,
-                                                encrypted=False,
-                                                delete_on_termination=True,
-                                                volume_type=ec2.EbsDeviceVolumeType.GP2
-                                            )
-                                        ),
-                                        ec2.BlockDevice(
-                                            device_name='xvdf',
-                                            volume=ec2.BlockDeviceVolume.ebs(
-                                                volume_size=1400,
-                                                encrypted=False,
-                                                delete_on_termination=True,
-                                                volume_type=ec2.EbsDeviceVolumeType.GP2
-                                            )
-                                        )
-                                    ],
+                                    block_devices=block_devices,
                                     instance_name='-'.join([construct_id, 'app'.replace(' ', '-')]),
                                     key_name=key_name,
                                     role=app_role,
@@ -98,9 +94,7 @@ class EC2Stack(cdk.Stack):
                          ]
                          )
 
-        with open(os.path.join(os.path.dirname(__file__), 'ec2_inbounds.yaml'), 'r', encoding='UTF-8') as file:
-            inbounds = yaml.load(file, Loader=yaml.SafeLoader)
-        for inbound in inbounds:
+        for inbound in ec2_config['inbounds']:
             for port in inbound['port']:
                 if '-' in str(port):
                     [from_port, to_port] = str(port).split('-')

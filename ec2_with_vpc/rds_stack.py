@@ -11,15 +11,16 @@ from aws_cdk import (
 from utils.rds_instance_type import RDSInstanceType
 
 SQL_SERVER_VERSION = rds.SqlServerEngineVersion.VER_12_00_5571_0_V1
+SQL_ENGINE = rds.DatabaseInstanceEngine.sql_server_se(version=SQL_SERVER_VERSION)
 
 
 class RDSStack(cdk.Stack):
-    def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, **kwargs) -> None:
+    def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, rds_name: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         rds_security_group = ec2.SecurityGroup(
             self, 'RDSSecurityGroup', vpc=vpc, description='Security group for rds.',
-            security_group_name='-'.join([construct_id, 'rds'.replace(' ', '-')])
+            security_group_name='-'.join([construct_id, 'sg'.replace(' ', '-')])
         )
         with open(os.path.join(os.path.dirname(__file__), 'rds_config.yaml'), 'r', encoding='UTF-8') as file:
             rds_config = yaml.load(file, Loader=yaml.SafeLoader)
@@ -83,7 +84,7 @@ class RDSStack(cdk.Stack):
         )
         option_group = rds.OptionGroup(
             self, 'OptionGroup',
-            engine=rds.DatabaseInstanceEngine.sql_server_ee(version=SQL_SERVER_VERSION),
+            engine=SQL_ENGINE,
             configurations=[
                 rds.OptionConfiguration(
                     name='SQLSERVER_BACKUP_RESTORE',
@@ -102,8 +103,9 @@ class RDSStack(cdk.Stack):
                     json_field=master_user['password']['json_field']
                 )
             ),
+            storage_encrypted=False,
             allocated_storage=int(rds_config['storage']),
-            engine=rds.DatabaseInstanceEngine.sql_server_ee(version=SQL_SERVER_VERSION),
+            engine=SQL_ENGINE,
             instance_type=RDSInstanceType().get_instance_type(rds_config['type']),
             license_model=rds.LicenseModel.LICENSE_INCLUDED,
             timezone=rds_config['timezone'],
@@ -113,8 +115,8 @@ class RDSStack(cdk.Stack):
             copy_tags_to_snapshot=True,
             delete_automated_backups=True,
             deletion_protection=False,
-            instance_identifier='-'.join([construct_id, 'rds'.replace(' ', '-')]),
-            max_allocated_storage=int(rds_config['max_storage']) if rds_config['max_storage'] is not None else None,
+            instance_identifier=rds_name,
+            max_allocated_storage=int(rds_config['max_storage']) if rds_config['max_storage'] else None,
             multi_az=False,
             option_group=option_group,
             port=rds_port,

@@ -1,16 +1,30 @@
 ---
-ami: 'ami-039d523dc6a4d52ab'
+ami: 'ami-0cfa71f4e607f9c31'
 type: 't2.xlarge'
 block_devices:
   - name: '/dev/sda1'
-    size: 30
+    size: 200
   - name: 'xvdf'
     size: 1400
 inbounds:
   - ip: '222.126.242.202/32'
     port:
-      - 21-22
       - 3389
       - 443
       - 80
-    description: 'from office'
+    description: 'from Shanghai office'
+  - ip: '222.126.242.203/32'
+    port:
+      - 3389
+      - 443
+      - 80
+    description: 'from Shanghai office'
+  - ip: '0.0.0.0/0'
+    port:
+      - 80
+      - 443
+    description: 'public'
+  - ip: '127.0.0.1/32'
+    port:
+      - 0 - 65535
+    description: 'self'

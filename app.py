@@ -16,28 +16,27 @@ with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding=
 project = config['project'].lower().replace(' ', '-')
 environment = config['environment']
 vpc_cidr = config['vpc_cidr']
+aws_region = config['aws_region']
+aws_environment = cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=aws_region)
 aws_tags_list = []
 for k, v in config['aws_tags'].items():
     aws_tags_list.append({'Key': k, 'Value': v or ' '})
 
 app = cdk.App()
-vpc_stack = VPCStack(app, '-'.join([project, environment, 'vpc']), cidr=vpc_cidr,
-                     env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-                                         region=os.getenv("CDK_DEFAULT_REGION")))
+vpc_stack = VPCStack(app, '-'.join([project, environment, 'vpc']), cidr=vpc_cidr, env=aws_environment)
 date_now = datetime.datetime.now().strftime("%Y%m%d")
 ec2_stack = EC2Stack(app, '-'.join([project, environment, 'ec2']),
                      vpc=vpc_stack.vpc,
                      key_name=Keypair.create_keypair(
                          keypair_name='-'.join([project, environment, date_now, 'key']), aws_tags=aws_tags_list),
-                     env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-                                         region=os.getenv("CDK_DEFAULT_REGION")))
+                     env=aws_environment)
 rds_stack = RDSStack(app, '-'.join([project, environment, 'rds']),
                      vpc=vpc_stack.vpc,
-                     env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-                                         region=os.getenv("CDK_DEFAULT_REGION")))
+                     rds_name='-'.join([project, environment, 'rds']),
+                     env=aws_environment)
 s3_bucket_stack = S3BucketStack(app, '-'.join([project, environment, 's3']),
-                                env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"),
-                                                    region=os.getenv("CDK_DEFAULT_REGION")))
+                                bucket_name='-'.join([project, environment, 's3']),
+                                env=aws_environment)
 
 for key, value in config['aws_tags'].items():
     cdk.Tags.of(app).add(key, value or " ")

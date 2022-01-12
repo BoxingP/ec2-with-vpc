@@ -5,11 +5,11 @@ from aws_cdk import (
 
 
 class S3BucketStack(cdk.Stack):
-    def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: cdk.Construct, construct_id: str, bucket_name: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         s3_bucket = s3.Bucket(
-            self, 'S3Bucket', bucket_name='-'.join([construct_id, 's3']),
+            self, 'S3Bucket', bucket_name=bucket_name,
             versioned=True,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             auto_delete_objects=False,

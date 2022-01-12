@@ -22,7 +22,7 @@ class EC2Stack(cdk.Stack):
             ami_map={os.getenv('AWS_DEFAULT_REGION'): ec2_config['ami']})
         app_security_group = ec2.SecurityGroup(self, 'AppSecurityGroup', vpc=vpc,
                                                description='Security group for app servers.',
-                                               security_group_name='-'.join([construct_id, 'app sg'.replace(' ', '-')])
+                                               security_group_name='-'.join([construct_id, 'sg'.replace(' ', '-')])
                                                )
         operating_s3_policy = iam.ManagedPolicy(
             self, 'OperatingS3Policy',

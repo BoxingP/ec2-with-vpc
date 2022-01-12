@@ -1,4 +1,5 @@
 ---
+aws_region: cn-northwest-1
 aws_tags:
   app role: 'Digital Solutions China Operations'
   application owner: '{{ email_address }}'
@@ -10,4 +11,4 @@ aws_tags:
   project: '{{ project | title }}'
 environment: '{{ deploy_environment | lower | replace(' ', '-') }}'
 project: '{{ project | lower | replace(' ', '-') }}'
-vpc_cidr: '10.2.0.0/16'
+vpc_cidr: '10.5.0.0/16'

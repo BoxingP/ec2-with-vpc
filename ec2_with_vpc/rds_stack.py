@@ -4,6 +4,7 @@ import yaml
 from aws_cdk import (
     aws_ec2 as ec2,
     aws_iam as iam,
+    aws_kms as kms,
     aws_rds as rds,
     core as cdk
 )
@@ -15,7 +16,8 @@ SQL_ENGINE = rds.DatabaseInstanceEngine.sql_server_se(version=SQL_SERVER_VERSION
 
 
 class RDSStack(cdk.Stack):
-    def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, rds_name: str, **kwargs) -> None:
+    def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, key: kms.Key, rds_name: str,
+                 **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         rds_security_group = ec2.SecurityGroup(
@@ -103,7 +105,8 @@ class RDSStack(cdk.Stack):
                     json_field=master_user['password']['json_field']
                 )
             ),
-            storage_encrypted=False,
+            storage_encrypted=True,
+            storage_encryption_key=key,
             allocated_storage=int(rds_config['storage']),
             engine=SQL_ENGINE,
             instance_type=RDSInstanceType().get_instance_type(rds_config['type']),

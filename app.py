@@ -5,11 +5,11 @@ import os
 import yaml
 from aws_cdk import core as cdk
 
-from ec2_with_vpc.ec2_stack import EC2Stack
-from ec2_with_vpc.kms_stack import KMSStack
-from ec2_with_vpc.rds_stack import RDSStack
-from ec2_with_vpc.s3_bucket_stack import S3BucketStack
-from ec2_with_vpc.vpc_stack import VPCStack
+from stacks.ec2_stack import EC2Stack
+from stacks.kms_stack import KMSStack
+from stacks.rds_stack import RDSStack
+from stacks.s3_bucket_stack import S3BucketStack
+from stacks.vpc_stack import VPCStack
 from utils.keypair import Keypair
 
 with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding='UTF-8') as file:

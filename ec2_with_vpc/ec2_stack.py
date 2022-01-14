@@ -61,7 +61,7 @@ class EC2Stack(cdk.Stack):
                             assumed_by=iam.ServicePrincipal('ec2.amazonaws.com.cn'),
                             description="IAM role for app servers",
                             managed_policies=[operating_s3_policy],
-                            role_name='-'.join([construct_id, 'app servers'.replace(' ', '-')]),
+                            role_name='-'.join([construct_id, 'role'.replace(' ', '-')]),
                             )
         block_devices = []
         for device in ec2_config['block_devices']:
@@ -113,13 +113,13 @@ class EC2Stack(cdk.Stack):
                 )
 
         cdk.CfnOutput(
-            self, 'OutputAppInstanceId',
+            self, 'OutputEc2InstanceId',
             export_name=construct_id.title().replace('-', '') + 'InstanceId', value=app_instance.instance_id)
         cdk.CfnOutput(
-            self, 'OutputAppPublicIP',
+            self, 'OutputEc2PublicIP',
             export_name=construct_id.title().replace('-', '') + 'InstancePublicIP',
             value=app_instance.instance_public_ip)
         cdk.CfnOutput(
-            self, 'OutputAppSecurityGroupId',
+            self, 'OutputEc2SecurityGroupId',
             export_name=construct_id.title().replace('-', '') + 'SecurityGroupId',
             value=app_security_group.security_group_id)

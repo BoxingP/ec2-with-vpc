@@ -61,7 +61,7 @@ class KMSStack(cdk.Stack):
         )
 
         cdk.CfnOutput(
-            self, 'OutputKMSKey',
+            self, 'OutputKmsKeyId',
             export_name=construct_id.title().replace('-', '') + 'KeyId',
             value=self.key.key_id
         )

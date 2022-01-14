@@ -82,7 +82,7 @@ class RDSStack(cdk.Stack):
             assumed_by=iam.ServicePrincipal('rds.amazonaws.com'),
             description="IAM role for rds",
             managed_policies=[backup_restore_from_s3_policy],
-            role_name='-'.join([construct_id, 'rds'.replace(' ', '-')]),
+            role_name='-'.join([construct_id, 'role'.replace(' ', '-')]),
         )
         option_group = rds.OptionGroup(
             self, 'OptionGroup',
@@ -133,12 +133,12 @@ class RDSStack(cdk.Stack):
         )
 
         cdk.CfnOutput(
-            self, 'OutputRDSEndpointAddress',
+            self, 'OutputRdsEndpointAddress',
             export_name=construct_id.title().replace('-', '') + 'EndpointAddress',
             value=mssql_rds.db_instance_endpoint_address
         )
         cdk.CfnOutput(
-            self, 'OutputRDSEndpointPort',
+            self, 'OutputRdsEndpointPort',
             export_name=construct_id.title().replace('-', '') + 'EndpointPort',
             value=mssql_rds.db_instance_endpoint_port
         )

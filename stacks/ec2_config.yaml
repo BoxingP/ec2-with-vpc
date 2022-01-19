@@ -4,8 +4,6 @@ type: 't2.xlarge'
 block_devices:
   - name: '/dev/sda1'
     size: 200
-  - name: 'xvdf'
-    size: 1400
 inbounds:
   - ip: '222.126.242.202/32'
     port:

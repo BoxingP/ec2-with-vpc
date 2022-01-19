@@ -7,6 +7,9 @@ from aws_cdk import (
     core as cdk
 )
 
+DB_PORT = 1433
+RDP_PORT = 3389
+
 
 class EC2Stack(cdk.Stack):
     def __init__(self, scope: cdk.Construct, construct_id: str, vpc: ec2.Vpc, key_name: str,
@@ -111,6 +114,32 @@ class EC2Stack(cdk.Stack):
                     ),
                     description=inbound['description']
                 )
+
+        db_windows_image = ec2.MachineImage.generic_windows(
+            ami_map={os.getenv('AWS_DEFAULT_REGION'): ec2_config['ami']})
+        db_security_group = ec2.SecurityGroup(self, 'DBSecurityGroup', vpc=vpc,
+                                              description='Security group for db servers.',
+                                              security_group_name='-'.join([construct_id, 'db sg'.replace(' ', '-')])
+                                              )
+        db_role = iam.Role(self, 'DBRole',
+                           assumed_by=iam.ServicePrincipal('ec2.amazonaws.com.cn'),
+                           description="IAM role for db servers",
+                           managed_policies=[],
+                           role_name='-'.join([construct_id, 'db role'.replace(' ', '-')]),
+                           )
+        db_instance = ec2.Instance(self, 'DBEC2',
+                                   instance_type=ec2.InstanceType(ec2_config['type']),
+                                   machine_image=db_windows_image,
+                                   vpc=vpc,
+                                   block_devices=block_devices,
+                                   instance_name='-'.join([construct_id, 'db'.replace(' ', '-')]),
+                                   key_name=key_name,
+                                   role=db_role,
+                                   security_group=db_security_group,
+                                   vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE)
+                                   )
+        db_security_group.connections.allow_from(app_security_group, ec2.Port.tcp(DB_PORT), "from app servers")
+        db_security_group.connections.allow_from(app_security_group, ec2.Port.tcp(RDP_PORT), "from app servers")
 
         cdk.CfnOutput(
             self, 'OutputEc2InstanceId',
